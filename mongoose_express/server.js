@@ -14,7 +14,8 @@ const productSchema = new mongoose.Schema({
   inStock: { type: Boolean, required: true },
 });
 
-const Product = mongoose.model("products", productModel);
+// Create a Product model
+const Product = mongoose.model("Product", productSchema);
 
 // Routes
 
@@ -27,14 +28,14 @@ app.get("/products", async (req, res) => {
 // 2. Create a new product
 app.post("/products", async (req, res) => {
   await Product.create(req.body);
-  res.json(req.body);
+  res.status(201).json(product);
 });
 
 // 3. Update a product by ID
 app.put("/products/:id", async (req, res) => {
   const { id } = req.params;
   try {
-    const updatedProduct = await Product.updateOne({ _id: id }, req.body, {
+    const updatedProduct = await Product.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true,
     });
@@ -50,12 +51,15 @@ app.put("/products/:id", async (req, res) => {
 // 4. Delete a product by ID
 app.delete("/products/:id", async (req, res) => {
   const { id } = req.params;
-
-  const deletedProduct = await Product.deleteOne({ _id: id });
-  if (!deletedProduct) {
-    return res.status(404).json({ error: "Product not found" });
+  try {
+    const deletedProduct = await Product.findByIdAndDelete(id);
+    if (!deletedProduct) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    res.json(deletedProduct);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete product" });
   }
-  res.json(deletedProduct);
 });
 
 // Start the server
